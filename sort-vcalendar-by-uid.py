@@ -5,6 +5,12 @@
 
 # Copyright (c) 2014, L. David Baron <dbaron@dbaron.org>
 
+# This script takes a vCalendar file and sorts any sequence of VEVENT
+# sections within it by their UID, with the secondary sort key being
+# their SEQUENCE.  The sort should be stable if there are any events
+# that have duplicate UID and SEQUENCE, but I haven't tested this
+# thoroughly.
+#
 # I find this script useful for storing backups of a calendar in a
 # version control repository, when the calendar is generated in random
 # order (as Google Calendar vCalendar files are).
@@ -26,6 +32,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from optparse import OptionParser
+from operator import itemgetter
 import sys
 
 op = OptionParser()
@@ -75,24 +82,33 @@ def is_section(item):
 def is_event(item):
     return type(item) == list and item[0] == "BEGIN:VEVENT"
 
-def find_uid(event):
+def find_key(event):
     uid = None
+    sequence = None
     for item in event:
-        if not is_section(item) and item.startswith("UID:"):
-            itemuid = item[4:]
-            if uid is not None:
-                raise StandardError("duplicate UIDs " + uid + " and " + itemuid)
-            uid = itemuid
+        if not is_section(item):
+            if item.startswith("UID:"):
+                itemuid = item[4:]
+                if uid is not None:
+                    raise StandardError("duplicate UIDs " + uid + " and " + itemuid)
+                uid = itemuid
+            elif item.startswith("SEQUENCE:"):
+                itemsequence = item[9:]
+                if sequence is not None:
+                    raise StandardError("duplicate SEQUENCEs " + sequence + " and " + itemsequence)
+                sequence = itemsequence
     if uid is None:
         raise StandardError("event without UID")
-    return uid
+    if sequence is None:
+        raise StandardError("event without SEQUENCE")
+    return (uid, int(sequence))
 
 def flush_event_stack(stack):
     if len(stack) == 0:
         return
-    event_dict = { find_uid(event): event for event in stack }
-    for uid in sorted(event_dict.keys()):
-        emit(event_dict[uid])
+    keys_and_events = [ (find_key(event), event) for event in stack ]
+    for [key, event] in sorted(keys_and_events, key=itemgetter(0)):
+        emit(event)
 
 def emit(section):
     event_stack = []
