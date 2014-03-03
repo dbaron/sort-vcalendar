@@ -60,7 +60,7 @@ def read_line(line, lineno):
         section_stack.append(new_section)
     elif line.startswith("END:"):
         # check the BEGIN: and the END: match
-        if current_section[0][6:] != line[4:]:
+        if current_section[0][6:].rstrip("\r\n") != line[4:].rstrip("\r\n"):
             raise StandardError("section name mismatch at line " + lineno)
 
         current_section.append(line)
@@ -70,7 +70,7 @@ def read_line(line, lineno):
 
 lineno = 1
 for line in input:
-    read_line(line.rstrip("\r\n"), lineno)
+    read_line(line, lineno)
     lineno += 1
 
 if section_stack != [ vcalfile ]:
@@ -80,7 +80,7 @@ def is_section(item):
     return type(item) == list
 
 def is_event(item):
-    return type(item) == list and item[0] == "BEGIN:VEVENT"
+    return type(item) == list and item[0].rstrip("\r\n") == "BEGIN:VEVENT"
 
 def find_key(event):
     uid = None
@@ -88,12 +88,12 @@ def find_key(event):
     for item in event:
         if not is_section(item):
             if item.startswith("UID:"):
-                itemuid = item[4:]
+                itemuid = item[4:].rstrip("\r\n")
                 if uid is not None:
                     raise StandardError("duplicate UIDs " + uid + " and " + itemuid)
                 uid = itemuid
             elif item.startswith("SEQUENCE:"):
-                itemsequence = item[9:]
+                itemsequence = item[9:].rstrip("\r\n")
                 if sequence is not None:
                     raise StandardError("duplicate SEQUENCEs " + sequence + " and " + itemsequence)
                 sequence = itemsequence
@@ -121,6 +121,6 @@ def emit(section):
             if is_section(item):
                 emit(item)
             else:
-                print item
+                sys.stdout.write(item)
 
 emit(vcalfile)
