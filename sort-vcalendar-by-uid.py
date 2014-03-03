@@ -107,7 +107,7 @@ def flush_event_stack(stack):
     if len(stack) == 0:
         return
     keys_and_events = [ (find_key(event), event) for event in stack ]
-    for [key, event] in sorted(keys_and_events, key=itemgetter(0)):
+    for (key, event) in sorted(keys_and_events, key=itemgetter(0)):
         emit(event)
 
 def emit(section):
