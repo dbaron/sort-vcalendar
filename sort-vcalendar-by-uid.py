@@ -13,10 +13,8 @@
 #
 # I find this script useful for storing backups of a calendar in a
 # version control repository, when the calendar is generated in random
-# order (as Google Calendar vCalendar files are).
-#
-# Sorting the events by their UID makes the diffs much smaller, and
-# makes them usefully readable.
+# order.  Sorting the events by their UID makes the diffs much smaller,
+# and makes them usefully readable.
 
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
